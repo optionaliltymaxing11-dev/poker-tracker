@@ -31,7 +31,7 @@ declare global {
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
-const LS_CLIENT_ID = 'google-client-id';
+const GOOGLE_CLIENT_ID = '763374010043-fraast8o6cq599gokj4n56p1m56l20fd.apps.googleusercontent.com';
 const LS_CONNECTED_EMAIL = 'google-drive-email';
 const LS_AUTO_BACKUP = 'google-drive-auto-backup';
 const LS_LAST_BACKUP = 'lastBackupTime';
@@ -67,16 +67,8 @@ function loadGisScript(): Promise<void> {
 
 // ── Public helpers ───────────────────────────────────────────────────
 
-export function getClientId(): string | null {
-  return localStorage.getItem(LS_CLIENT_ID);
-}
-
-export function setClientId(id: string): void {
-  localStorage.setItem(LS_CLIENT_ID, id.trim());
-}
-
-export function removeClientId(): void {
-  localStorage.removeItem(LS_CLIENT_ID);
+export function getClientId(): string {
+  return GOOGLE_CLIENT_ID;
 }
 
 export function getConnectedEmail(): string | null {
@@ -115,8 +107,7 @@ export function disconnect(): void {
 // ── OAuth ────────────────────────────────────────────────────────────
 
 export async function authorize(): Promise<string> {
-  const clientId = getClientId();
-  if (!clientId) throw new Error('Google Client ID not configured');
+  const clientId = GOOGLE_CLIENT_ID;
 
   await loadGisScript();
 
