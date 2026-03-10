@@ -1,0 +1,65 @@
+import { useState } from 'react';
+import BottomNav from './components/BottomNav';
+import Dashboard from './pages/Dashboard';
+import History from './pages/History';
+import Graphs from './pages/Graphs';
+import Filters from './pages/Filters';
+import Settings from './pages/Settings';
+import Notes from './pages/Notes';
+import NewSession from './pages/NewSession';
+
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showNewSession, setShowNewSession] = useState(false);
+
+  const renderPage = () => {
+    if (showNewSession) {
+      return (
+        <NewSession
+          onSave={() => {
+            setShowNewSession(false);
+            setActiveTab('dashboard');
+          }}
+          onCancel={() => setShowNewSession(false)}
+        />
+      );
+    }
+
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'history':
+        return <History />;
+      case 'graphs':
+        return <Graphs />;
+      case 'filters':
+        return <Filters />;
+      case 'settings':
+        return <Settings />;
+      case 'notes':
+        return <Notes />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+      {renderPage()}
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Floating Action Button for New Session */}
+      {!showNewSession && activeTab === 'dashboard' && (
+        <button
+          onClick={() => setShowNewSession(true)}
+          className="fixed bottom-20 right-4 w-14 h-14 bg-teal text-white rounded-full shadow-lg flex items-center justify-center text-3xl font-bold z-40"
+          aria-label="New Session"
+        >
+          +
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default App;

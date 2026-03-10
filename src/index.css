@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #00796B;
+  --color-primary-dark: #004D40;
+  --color-primary-light: #B2DFDB;
+  --color-accent: #00796B;
+  --color-bg: #ffffff;
+  --color-card-bg: #ffffff;
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+  --color-profit: #2E7D32;
+  --color-loss: #D32F2F;
+  --color-border: #e5e7eb;
+  --color-section-bg: #B2DFDB;
+  --color-input-bg: #ffffff;
+  --color-hover: #f9fafb;
+}
+
+@theme {
+  --color-teal: var(--color-accent);
+  --color-teal-dark: var(--color-primary-dark);
+  --color-teal-light: var(--color-section-bg);
+  --color-profit: var(--color-profit);
+  --color-loss: var(--color-loss);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Theme utility classes */
+.bg-app { background-color: var(--color-bg); }
+.bg-card { background-color: var(--color-card-bg); }
+.bg-section { background-color: var(--color-section-bg); }
+.bg-hover { background-color: var(--color-hover); }
+.bg-input { background-color: var(--color-input-bg); }
+.text-theme { color: var(--color-text); }
+.text-theme-secondary { color: var(--color-text-secondary); }
+.border-theme { border-color: var(--color-border); }
+.bg-primary { background-color: var(--color-primary); }
+.bg-accent { background-color: var(--color-accent); }
+.text-accent { color: var(--color-accent); }
+
+/* Form element theming */
+select, input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea {
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+select option {
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+}
