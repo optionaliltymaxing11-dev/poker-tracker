@@ -17,7 +17,7 @@ export async function importSQLiteDatabase(file: File): Promise<ImportStats> {
   const sqlJsModule = await import('sql.js');
   const initSqlJs = sqlJsModule.default || sqlJsModule;
   const SQL = await initSqlJs({
-    locateFile: () => '/sql-wasm.wasm'
+    locateFile: () => `${import.meta.env.BASE_URL}sql-wasm.wasm`
   });
 
   const arrayBuffer = await file.arrayBuffer();
