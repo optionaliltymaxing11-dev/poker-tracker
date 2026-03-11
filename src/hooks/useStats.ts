@@ -120,7 +120,7 @@ export function useBreakdown(sessions: SessionWithDetails[] | undefined): Breakd
     const formatMap = new Map<string, Map<string, Map<string, { profit: number; durationMs: number }>>>();
 
     sessions.forEach(session => {
-      const formatName = session.gameFormatName;
+      const formatName = 'All Games';
       const gameName = session.gameName;
       const blindsName = session.blindsText || 'N/A';
 
