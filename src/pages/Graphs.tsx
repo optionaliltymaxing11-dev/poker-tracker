@@ -221,9 +221,13 @@ function StakeProgression({ sessions }: { sessions: SessionWithDetails[] }) {
     const qualifiedStakes = [...stakeGroups.entries()].filter(([, arr]) => arr.length >= 10);
     const showPerStake = qualifiedStakes.length > 1;
 
-    // Build rolling data for overall
-    const windowSize = 20;
+    // Build rolling data - 200-hour window
+    const WINDOW_HOURS = 200;
     const data: RollingData[] = [];
+
+    // Precompute profits and hours for each session
+    const sessionProfits = sorted.map(s => calculateProfit(s));
+    const sessionHours = sorted.map(s => calculateHours(calculateDuration(s, s.breaks)));
 
     // Per-stake session counters for rolling calc
     const stakeCounters = new Map<string, { profits: number[]; hours: number[] }>();
@@ -232,34 +236,31 @@ function StakeProgression({ sessions }: { sessions: SessionWithDetails[] }) {
     }
 
     sorted.forEach((s, idx) => {
-      const profit = calculateProfit(s);
-      const hours = calculateHours(calculateDuration(s, s.breaks));
-
-      // Overall rolling
-      const startIdx = Math.max(0, idx - windowSize + 1);
+      // Overall rolling: look back from idx until we accumulate WINDOW_HOURS
       let windowProfit = 0;
       let windowHours = 0;
-      for (let i = startIdx; i <= idx; i++) {
-        windowProfit += calculateProfit(sorted[i]);
-        windowHours += calculateHours(calculateDuration(sorted[i], sorted[i].breaks));
+      for (let i = idx; i >= 0; i--) {
+        windowProfit += sessionProfits[i];
+        windowHours += sessionHours[i];
+        if (windowHours >= WINDOW_HOURS) break;
       }
       const rollingRate = windowHours > 0 ? Math.round(windowProfit / windowHours) : 0;
 
       const point: RollingData = { session: idx + 1, overall: rollingRate };
 
-      // Per-stake rolling
+      // Per-stake rolling (also 200-hour window)
       if (showPerStake) {
         const stakeKey = s.blindsText || 'Unknown';
         if (stakeCounters.has(stakeKey)) {
           const counter = stakeCounters.get(stakeKey)!;
-          counter.profits.push(profit);
-          counter.hours.push(hours);
+          counter.profits.push(sessionProfits[idx]);
+          counter.hours.push(sessionHours[idx]);
 
-          const start = Math.max(0, counter.profits.length - windowSize);
           let sp = 0, sh = 0;
-          for (let i = start; i < counter.profits.length; i++) {
+          for (let i = counter.profits.length - 1; i >= 0; i--) {
             sp += counter.profits[i];
             sh += counter.hours[i];
+            if (sh >= WINDOW_HOURS) break;
           }
           point[stakeKey] = sh > 0 ? Math.round(sp / sh) : 0;
         }
