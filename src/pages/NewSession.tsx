@@ -29,7 +29,8 @@ export default function NewSession({ onSave, onCancel }: NewSessionProps) {
 
   useEffect(() => {
     const now = new Date();
-    setStartDate(now.toISOString().split('T')[0]);
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    setStartDate(localDate);
     setStartTime(now.toTimeString().slice(0, 5));
   }, []);
 
