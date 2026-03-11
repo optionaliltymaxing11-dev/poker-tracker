@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [activeTimers, setActiveTimers] = useState<{ [key: number]: number }>({});
   const [sessionToEnd, setSessionToEnd] = useState<Session | null>(null);
   const [pausedSessions, setPausedSessions] = useState<{ [sessionId: number]: number }>({});
+  const [rebuySession, setRebuySession] = useState<Session | null>(null);
+  const [rebuyAmount, setRebuyAmount] = useState('');
 
   useEffect(() => {
     if (!activeSessions) return;
@@ -50,6 +52,17 @@ export default function Dashboard() {
         return next;
       });
     }
+  };
+
+  const handleRebuy = async () => {
+    if (!rebuySession || !rebuyAmount) return;
+    const amount = parseFloat(rebuyAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    await db.sessions.update(rebuySession.session_id!, {
+      buy_in: rebuySession.buy_in + amount,
+    });
+    setRebuySession(null);
+    setRebuyAmount('');
   };
 
   useEffect(() => {
@@ -111,27 +124,33 @@ export default function Dashboard() {
                     <span className="text-xs text-theme-secondary ml-2">PAUSED</span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap justify-end">
+                  <button
+                    onClick={() => { setRebuySession(session); setRebuyAmount(''); }}
+                    className="px-3 py-1 bg-blue-600 text-white rounded font-semibold text-sm"
+                  >
+                    Rebuy
+                  </button>
                   {session.session_id! in pausedSessions ? (
                     <button
                       onClick={() => handleResume(session.session_id!)}
-                      className="px-4 py-1 bg-teal text-white rounded font-semibold text-sm"
+                      className="px-3 py-1 bg-teal text-white rounded font-semibold text-sm"
                     >
                       Resume
                     </button>
                   ) : (
                     <button
                       onClick={() => handlePause(session.session_id!)}
-                      className="px-4 py-1 bg-amber-500 text-white rounded font-semibold text-sm"
+                      className="px-3 py-1 bg-amber-500 text-white rounded font-semibold text-sm"
                     >
                       Pause
                     </button>
                   )}
                   <button
                     onClick={() => setSessionToEnd(session)}
-                    className="px-4 py-1 bg-loss text-white rounded font-semibold text-sm"
+                    className="px-3 py-1 bg-loss text-white rounded font-semibold text-sm"
                   >
-                    End Session
+                    End
                   </button>
                 </div>
               </div>
@@ -146,6 +165,49 @@ export default function Dashboard() {
           onComplete={() => setSessionToEnd(null)}
           onCancel={() => setSessionToEnd(null)}
         />
+      )}
+
+      {rebuySession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="bg-card border border-theme rounded-lg p-5 max-w-sm w-full space-y-4">
+            <h3 className="text-lg font-bold text-theme">Rebuy / Add-on</h3>
+            <p className="text-sm text-theme-secondary">
+              Current buy-in: <strong className="text-theme">{formatCurrency(rebuySession.buy_in)}</strong>
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">Amount</label>
+              <input
+                type="number"
+                value={rebuyAmount}
+                onChange={(e) => setRebuyAmount(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                autoFocus
+                className="w-full px-3 py-2 border border-theme rounded bg-input text-theme text-lg"
+              />
+            </div>
+            {rebuyAmount && parseFloat(rebuyAmount) > 0 && (
+              <p className="text-sm text-theme-secondary">
+                New total: <strong className="text-theme">{formatCurrency(rebuySession.buy_in + parseFloat(rebuyAmount))}</strong>
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRebuySession(null)}
+                className="flex-1 py-2 rounded font-semibold bg-hover text-theme border border-theme"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRebuy}
+                disabled={!rebuyAmount || parseFloat(rebuyAmount) <= 0}
+                className="flex-1 py-2 rounded font-semibold bg-blue-600 text-white disabled:opacity-50"
+              >
+                Add {rebuyAmount && parseFloat(rebuyAmount) > 0 ? formatCurrency(parseFloat(rebuyAmount)) : ''}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Section title="Overview">
