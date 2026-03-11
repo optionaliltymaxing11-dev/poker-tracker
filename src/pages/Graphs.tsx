@@ -612,6 +612,8 @@ function useSwingStats(sessions: SessionWithDetails[]): SwingStats {
   }, [sessions]);
 }
 
+type SwingMode = 'dollars' | 'sessions' | 'days';
+
 function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
   const stats = useSwingStats(sessions);
   const primaryColor = usePrimaryColor();
@@ -620,49 +622,154 @@ function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
   const secondaryColor = useSecondaryColor();
   const gridColor = useBorderColor();
   const cardBg = useCardBgColor();
+  const [mode, setMode] = useState<SwingMode>('dollars');
 
   if (sessions.length === 0) return <p className="text-sm text-theme-secondary">No sessions</p>;
 
+  // Build mode-specific data
+  const sorted = useMemo(() => [...sessions].sort((a, b) => a.start - b.start), [sessions]);
+
+  const modeData = useMemo(() => {
+    if (mode === 'dollars') {
+      return stats.cumulativeData;
+    }
+
+    if (mode === 'sessions') {
+      // Track cumulative winning sessions vs losing sessions
+      let cumWins = 0;
+      return sorted.map((s, idx) => {
+        const p = calculateProfit(s);
+        cumWins += p >= 0 ? 1 : -1;
+        const dateStr = new Date(s.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return { session: idx + 1, profit: cumWins, peak: 0, date: dateStr };
+      });
+    }
+
+    // mode === 'days' - group by calendar day, cumulative daily P&L
+    const dayMap = new Map<string, number>();
+    sorted.forEach(s => {
+      const day = new Date(s.start).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      dayMap.set(day, (dayMap.get(day) || 0) + calculateProfit(s));
+    });
+
+    let cumProfit = 0;
+    const days = Array.from(dayMap.entries());
+    return days.map(([day, profit], idx) => {
+      cumProfit += profit;
+      const dateStr = new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return { session: idx + 1, profit: Math.round(cumProfit), peak: 0, date: dateStr, dayLabel: dateStr };
+    });
+  }, [mode, stats.cumulativeData, sorted]);
+
+  // Recalculate peak line for the mode data
+  const chartData = useMemo(() => {
+    let peak = 0;
+    return modeData.map(d => {
+      if (d.profit > peak) peak = d.profit;
+      return { ...d, peak };
+    });
+  }, [modeData]);
+
+  // Mode-specific stats
+  const modeStats = useMemo(() => {
+    let peak = 0;
+    let trough = 0;
+    let biggestDown = 0;
+    let biggestUp = 0;
+
+    chartData.forEach(d => {
+      if (d.profit > peak) {
+        const up = d.profit - trough;
+        if (up > biggestUp) biggestUp = up;
+        peak = d.profit;
+        trough = d.profit;
+      }
+      const dd = peak - d.profit;
+      if (dd > biggestDown) biggestDown = dd;
+      if (d.profit < trough) trough = d.profit;
+    });
+
+    const last = chartData[chartData.length - 1];
+    const currentDrawdown = last ? peak - last.profit : 0;
+
+    return { biggestDown, biggestUp, currentDrawdown };
+  }, [chartData]);
+
+  const formatVal = (v: number) => mode === 'dollars' ? `$${v.toLocaleString()}` : v.toLocaleString();
+
   return (
     <div>
+      {/* Mode Toggle */}
+      <div className="flex rounded-lg overflow-hidden border border-theme mb-4">
+        {(['dollars', 'sessions', 'days'] as SwingMode[]).map(m => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={`flex-1 py-2 text-sm font-semibold transition-colors ${
+              mode === m ? 'bg-accent text-white' : 'bg-hover text-theme-secondary'
+            }`}
+          >
+            {m === 'dollars' ? 'Dollars' : m === 'sessions' ? 'Sessions' : 'Days'}
+          </button>
+        ))}
+      </div>
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-hover rounded-lg p-3 text-center">
           <div className="text-xs text-theme-secondary mb-1">Current Streak</div>
           <div className={`text-lg font-bold ${stats.streakType === 'win' ? 'text-profit' : stats.streakType === 'loss' ? 'text-loss' : 'text-theme-secondary'}`}>
-            {stats.currentStreak} {stats.streakType === 'win' ? 'W' : stats.streakType === 'loss' ? 'L' : '—'}
+            {stats.currentStreak} {stats.streakType === 'win' ? 'W' : stats.streakType === 'loss' ? 'L' : '--'}
           </div>
         </div>
         <div className="bg-hover rounded-lg p-3 text-center">
           <div className="text-xs text-theme-secondary mb-1">Current Drawdown</div>
-          <div className={`text-lg font-bold ${stats.currentDrawdown > 0 ? 'text-loss' : 'text-profit'}`}>
-            {stats.currentDrawdown > 0 ? `-$${stats.currentDrawdown.toLocaleString()}` : 'At Peak ✓'}
+          <div className={`text-lg font-bold ${modeStats.currentDrawdown > 0 ? 'text-loss' : 'text-profit'}`}>
+            {modeStats.currentDrawdown > 0 ? `-${formatVal(modeStats.currentDrawdown)}` : 'At Peak ✓'}
           </div>
         </div>
         <div className="bg-hover rounded-lg p-3 text-center">
           <div className="text-xs text-theme-secondary mb-1">Biggest Downswing</div>
-          <div className="text-lg font-bold text-loss">-${stats.biggestDownswing.toLocaleString()}</div>
+          <div className="text-lg font-bold text-loss">-{formatVal(modeStats.biggestDown)}</div>
         </div>
         <div className="bg-hover rounded-lg p-3 text-center">
           <div className="text-xs text-theme-secondary mb-1">Biggest Upswing</div>
-          <div className="text-lg font-bold text-profit">+${stats.biggestUpswing.toLocaleString()}</div>
+          <div className="text-lg font-bold text-profit">+{formatVal(modeStats.biggestUp)}</div>
         </div>
       </div>
 
-      {/* Chart with downswing highlight */}
+      {/* Chart */}
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={stats.cumulativeData}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-          <XAxis dataKey="session" tick={{ fill: textColor }} label={{ value: 'Session #', position: 'insideBottom', offset: -5, fill: secondaryColor }} />
-          <YAxis tick={{ fill: textColor }} label={{ value: 'Profit ($)', angle: -90, position: 'insideLeft', fill: secondaryColor }} />
+          <XAxis
+            dataKey={mode === 'days' ? 'dayLabel' : 'session'}
+            tick={{ fill: textColor }}
+            label={{
+              value: mode === 'days' ? 'Date' : 'Session #',
+              position: 'insideBottom',
+              offset: -5,
+              fill: secondaryColor,
+            }}
+          />
+          <YAxis
+            tick={{ fill: textColor }}
+            label={{
+              value: mode === 'dollars' ? 'Profit ($)' : mode === 'sessions' ? 'Net Wins' : 'Profit ($)',
+              angle: -90,
+              position: 'insideLeft',
+              fill: secondaryColor,
+            }}
+          />
           <Tooltip
             contentStyle={{ backgroundColor: cardBg, borderColor: gridColor, color: textColor }}
             formatter={(value, name) => {
               const v = Number(value);
-              if (name === 'Peak') return [`$${v.toLocaleString()}`, 'Peak'];
-              return [`$${v.toLocaleString()}`, 'Cumulative Profit'];
+              if (name === 'Peak') return [formatVal(v), 'Peak'];
+              const label = mode === 'sessions' ? 'Net Wins' : 'Cumulative Profit';
+              return [formatVal(v), label];
             }}
-            labelFormatter={(label) => `Session ${label}`}
+            labelFormatter={(label) => mode === 'days' ? `${label}` : `Session ${label}`}
           />
           {stats.downswingAreas.map((area, i) => (
             <ReferenceArea key={i} x1={area.x1} x2={area.x2} fill={lossColor} fillOpacity={0.1} />
