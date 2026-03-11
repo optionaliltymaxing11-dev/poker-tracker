@@ -190,3 +190,54 @@ export function useBreakdown(sessions: SessionWithDetails[] | undefined): Breakd
     return breakdown;
   }, [sessions]);
 }
+
+export interface WinLossStats {
+  wins: number;
+  losses: number;
+  avgWin: number;
+  avgLoss: number;
+  biggestWin: number;
+  biggestLoss: number;
+  avgWinHourly: number;
+  avgLossHourly: number;
+}
+
+export function useWinLossStats(sessions: SessionWithDetails[] | undefined): WinLossStats {
+  return useMemo(() => {
+    const empty: WinLossStats = { wins: 0, losses: 0, avgWin: 0, avgLoss: 0, biggestWin: 0, biggestLoss: 0, avgWinHourly: 0, avgLossHourly: 0 };
+    if (!sessions || sessions.length === 0) return empty;
+
+    let wins = 0, losses = 0;
+    let totalWinProfit = 0, totalLossProfit = 0;
+    let biggestWin = 0, biggestLoss = 0;
+    let winHoursTotal = 0, lossHoursTotal = 0;
+
+    sessions.forEach(session => {
+      const profit = calculateProfit(session);
+      const hours = calculateHours(calculateDuration(session, session.breaks));
+
+      if (profit >= 0) {
+        wins++;
+        totalWinProfit += profit;
+        winHoursTotal += hours;
+        if (profit > biggestWin) biggestWin = profit;
+      } else {
+        losses++;
+        totalLossProfit += profit;
+        lossHoursTotal += hours;
+        if (profit < biggestLoss) biggestLoss = profit;
+      }
+    });
+
+    return {
+      wins,
+      losses,
+      avgWin: wins > 0 ? totalWinProfit / wins : 0,
+      avgLoss: losses > 0 ? totalLossProfit / losses : 0,
+      biggestWin,
+      biggestLoss,
+      avgWinHourly: winHoursTotal > 0 ? totalWinProfit / winHoursTotal : 0,
+      avgLossHourly: lossHoursTotal > 0 ? totalLossProfit / lossHoursTotal : 0,
+    };
+  }, [sessions]);
+}

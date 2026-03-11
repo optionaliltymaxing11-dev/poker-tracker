@@ -4,7 +4,7 @@ import Section from '../components/Section';
 import StatCard from '../components/StatCard';
 import EndSession from '../components/EndSession';
 import { useActiveSessions, useCompletedSessions } from '../hooks/useSessions';
-import { useStats, useBreakdown } from '../hooks/useStats';
+import { useStats, useBreakdown, useWinLossStats } from '../hooks/useStats';
 import { formatCurrency, formatDuration } from '../utils/calculations';
 import { db, Session } from '../db/schema';
 
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const completedSessions = useCompletedSessions();
   const stats = useStats(completedSessions);
   const breakdown = useBreakdown(completedSessions);
+  const wl = useWinLossStats(completedSessions);
 
   const [activeTimers, setActiveTimers] = useState<{ [key: number]: number }>({});
   const [sessionToEnd, setSessionToEnd] = useState<Session | null>(null);
@@ -228,6 +229,66 @@ export default function Dashboard() {
           />
         </div>
       </Section>
+
+      {completedSessions && completedSessions.length > 0 && (
+        <Section title="Win / Loss">
+          <div className="space-y-3">
+            {/* Win/Loss counts */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Wins</div>
+                <div className="text-2xl font-bold text-profit">{wl.wins}</div>
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Losses</div>
+                <div className="text-2xl font-bold text-loss">{wl.losses}</div>
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Win %</div>
+                <div className="text-2xl font-bold text-theme">
+                  {wl.wins + wl.losses > 0 ? Math.round((wl.wins / (wl.wins + wl.losses)) * 100) : 0}%
+                </div>
+              </div>
+            </div>
+
+            {/* Averages */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Avg Win</div>
+                <div className="text-lg font-bold text-profit">{formatCurrency(wl.avgWin)}</div>
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Avg Loss</div>
+                <div className="text-lg font-bold text-loss">{formatCurrency(wl.avgLoss)}</div>
+              </div>
+            </div>
+
+            {/* Biggest */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Biggest Win</div>
+                <div className="text-lg font-bold text-profit">{formatCurrency(wl.biggestWin)}</div>
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Biggest Loss</div>
+                <div className="text-lg font-bold text-loss">{formatCurrency(wl.biggestLoss)}</div>
+              </div>
+            </div>
+
+            {/* Hourly rates */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Avg Win $/hr</div>
+                <div className="text-lg font-bold text-profit">{formatCurrency(wl.avgWinHourly)}</div>
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Avg Loss $/hr</div>
+                <div className="text-lg font-bold text-loss">{formatCurrency(wl.avgLossHourly)}</div>
+              </div>
+            </div>
+          </div>
+        </Section>
+      )}
 
       {breakdown.length > 0 && (
         <Section title="Breakdown">
