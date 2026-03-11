@@ -94,9 +94,9 @@ export async function loadDemoData(): Promise<void> {
       { sb: 2, bb: 5, straddle: 0 },    // 2/5 NL
       { sb: 5, bb: 10, straddle: 10 },   // 10/10 NL (5/10 with straddle)
       { sb: 10, bb: 25, straddle: 0 },   // 10/25 NL
-      { sb: 2, bb: 5, straddle: 5 },     // 5/5 PLO (2/5 with straddle)
-      { sb: 5, bb: 10, straddle: 25 },   // 10/25 PLO (with straddle)
-      { sb: 10, bb: 25, straddle: 50 },  // 25/50 PLO
+      { sb: 5, bb: 5, straddle: 0 },     // 5/5 PLO
+      { sb: 10, bb: 25, straddle: 0 },   // 10/25 PLO
+      { sb: 25, bb: 50, straddle: 0 },   // 25/50 PLO
     ];
 
     const blindIds: number[] = [];
@@ -111,53 +111,55 @@ export async function loadDemoData(): Promise<void> {
     // Stake configurations with realistic variance
     // Target: 15-20 bb/hr winrate
     // PLO has much higher variance than NLH
+    // Winrates tuned so ~60% of sessions are winners
+    // Lower winrate + higher variance = more losing sessions
     const stakes: StakeConfig[] = [
       {
         blindId: blindIds[0], gameId: nlId, sb: 2, bb: 5, straddle: 0,
         gameName: '2/5 NL',
         typicalBuyIn: 500, buyInVariance: 200,
-        winRatePerHour: 17 * 5,       // 17 bb/hr * $5 = $85/hr
-        stdDevPerHour: 250,
+        winRatePerHour: 10 * 5,       // 10 bb/hr * $5 = $50/hr
+        stdDevPerHour: 300,
         weight: 0.30,
       },
       {
         blindId: blindIds[1], gameId: nlId, sb: 5, bb: 10, straddle: 10,
         gameName: '10/10 NL',
         typicalBuyIn: 1500, buyInVariance: 500,
-        winRatePerHour: 16 * 10,      // 16 bb/hr * $10 = $160/hr
-        stdDevPerHour: 450,
+        winRatePerHour: 9 * 10,       // 9 bb/hr * $10 = $90/hr
+        stdDevPerHour: 500,
         weight: 0.15,
       },
       {
         blindId: blindIds[2], gameId: nlId, sb: 10, bb: 25, straddle: 0,
         gameName: '10/25 NL',
         typicalBuyIn: 3000, buyInVariance: 1000,
-        winRatePerHour: 15 * 25,      // 15 bb/hr * $25 = $375/hr
-        stdDevPerHour: 800,
+        winRatePerHour: 8 * 25,       // 8 bb/hr * $25 = $200/hr
+        stdDevPerHour: 900,
         weight: 0.10,
       },
       {
-        blindId: blindIds[3], gameId: ploId, sb: 2, bb: 5, straddle: 5,
+        blindId: blindIds[3], gameId: ploId, sb: 5, bb: 5, straddle: 0,
         gameName: '5/5 PLO',
         typicalBuyIn: 1000, buyInVariance: 500,
-        winRatePerHour: 18 * 5,       // 18 bb/hr * $5 = $90/hr
-        stdDevPerHour: 400,
+        winRatePerHour: 10 * 5,       // 10 bb/hr * $5 = $50/hr
+        stdDevPerHour: 500,
         weight: 0.25,
       },
       {
-        blindId: blindIds[4], gameId: ploId, sb: 5, bb: 10, straddle: 25,
+        blindId: blindIds[4], gameId: ploId, sb: 10, bb: 25, straddle: 0,
         gameName: '10/25 PLO',
         typicalBuyIn: 2500, buyInVariance: 1000,
-        winRatePerHour: 16 * 25,      // 16 bb/hr * $25 = $400/hr
-        stdDevPerHour: 900,
+        winRatePerHour: 8 * 25,       // 8 bb/hr * $25 = $200/hr
+        stdDevPerHour: 1200,
         weight: 0.12,
       },
       {
-        blindId: blindIds[5], gameId: ploId, sb: 10, bb: 25, straddle: 50,
+        blindId: blindIds[5], gameId: ploId, sb: 25, bb: 50, straddle: 0,
         gameName: '25/50 PLO',
         typicalBuyIn: 5000, buyInVariance: 2000,
-        winRatePerHour: 15 * 50,      // 15 bb/hr * $50 = $750/hr
-        stdDevPerHour: 1800,
+        winRatePerHour: 7 * 50,       // 7 bb/hr * $50 = $350/hr
+        stdDevPerHour: 2500,
         weight: 0.08,
       },
     ];
@@ -251,11 +253,19 @@ export async function loadDemoData(): Promise<void> {
         const sessionStdDev = stake.stdDevPerHour * Math.sqrt(durationHours);
         let profit = Math.round(randNormal(expectedProfit, sessionStdDev));
 
-        // Occasional big wins/losses (fat tails)
-        if (rand() < 0.05) {
-          profit = Math.round(profit * randBetween(2, 3.5));
-        } else if (rand() < 0.05) {
-          profit = Math.round(profit - stake.stdDevPerHour * randBetween(3, 5));
+        // Fat tails - PLO gets bigger swings
+        const isPLO = stake.gameId === ploId;
+        if (rand() < (isPLO ? 0.08 : 0.04)) {
+          // Big win
+          profit = Math.round(profit * randBetween(2, 4));
+        } else if (rand() < (isPLO ? 0.12 : 0.06)) {
+          // Big loss - PLO losses can be brutal
+          profit = Math.round(-Math.abs(profit) - stake.stdDevPerHour * randBetween(2, isPLO ? 6 : 4));
+        }
+
+        // PLO downswing clusters: occasionally force consecutive losing sessions
+        if (isPLO && rand() < 0.15) {
+          profit = Math.round(-Math.abs(randNormal(stake.typicalBuyIn * 1.5, stake.typicalBuyIn * 0.5)));
         }
 
         // Buy-in
