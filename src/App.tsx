@@ -17,7 +17,10 @@ function App() {
   const [showNewSession, setShowNewSession] = useState(false);
   const [showAddCompleted, setShowAddCompleted] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('demo') === 'true';
+  });
 
   useEffect(() => {
     checkAutoBackup();
@@ -25,16 +28,21 @@ function App() {
     // Auto-load demo data if ?demo=true
     const params = new URLSearchParams(window.location.search);
     if (params.get('demo') === 'true') {
-      const key = 'demo-data-loaded';
-      // Only load once per browser (unless cleared)
       db.sessions.count().then(count => {
-        if (count === 0 || !localStorage.getItem(key)) {
-          setDemoLoading(true);
-          loadDemoData().then(() => {
-            localStorage.setItem(key, '1');
+        if (count > 0) {
+          // Already has data, skip loading
+          setDemoLoading(false);
+          return;
+        }
+        setDemoLoading(true);
+        loadDemoData()
+          .then(() => {
+            setDemoLoading(false);
+          })
+          .catch((err) => {
+            console.error('Demo data load failed:', err);
             setDemoLoading(false);
           });
-        }
       });
     }
   }, []);
