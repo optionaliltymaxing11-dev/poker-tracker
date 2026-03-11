@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import BottomNav from './components/BottomNav';
 import { checkAutoBackup } from './services/autoBackup';
+import { loadDemoData } from './db/demoData';
+import { db } from './db/schema';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Graphs from './pages/Graphs';
@@ -15,9 +17,26 @@ function App() {
   const [showNewSession, setShowNewSession] = useState(false);
   const [showAddCompleted, setShowAddCompleted] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
     checkAutoBackup();
+
+    // Auto-load demo data if ?demo=true
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('demo') === 'true') {
+      const key = 'demo-data-loaded';
+      // Only load once per browser (unless cleared)
+      db.sessions.count().then(count => {
+        if (count === 0 || !localStorage.getItem(key)) {
+          setDemoLoading(true);
+          loadDemoData().then(() => {
+            localStorage.setItem(key, '1');
+            setDemoLoading(false);
+          });
+        }
+      });
+    }
   }, []);
 
   const renderPage = () => {
@@ -64,6 +83,18 @@ function App() {
   };
 
   const showFab = !showNewSession && !showAddCompleted && activeTab === 'dashboard';
+
+  if (demoLoading) {
+    return (
+      <div className="min-h-screen bg-app flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-4xl">🎰</div>
+          <div className="text-xl font-bold text-theme">Loading Demo Data...</div>
+          <div className="text-sm text-theme-secondary">Generating 3 years of poker sessions</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-app">
