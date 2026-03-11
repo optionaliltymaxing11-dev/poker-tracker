@@ -98,7 +98,7 @@ function App() {
         <div className="text-center space-y-4">
           <div className="text-4xl">🎰</div>
           <div className="text-xl font-bold text-theme">Loading Demo Data...</div>
-          <div className="text-sm text-theme-secondary">Generating 3 years of poker sessions</div>
+          <div className="text-sm text-theme-secondary">Generating 7 years of poker sessions</div>
         </div>
       </div>
     );

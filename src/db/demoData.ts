@@ -188,7 +188,7 @@ export async function loadDemoData(): Promise<void> {
     }
 
     // Generate sessions: ~2 per week from Jan 2023 to March 2026
-    const startDate = new Date(2023, 0, 5); // Jan 5, 2023
+    const startDate = new Date(2019, 0, 5); // Jan 5, 2019
     const endDate = new Date(2026, 2, 10);  // March 10, 2026
     const totalWeeks = Math.floor((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
 
