@@ -286,6 +286,20 @@ export default function Dashboard() {
                 <div className="text-lg font-bold text-loss">{formatCurrency(wl.avgLossHourly)}</div>
               </div>
             </div>
+
+            {/* Best/Worst Day */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Best Day</div>
+                <div className="text-lg font-bold text-profit">{wl.bestDay ? formatCurrency(wl.bestDay.profit) : '--'}</div>
+                {wl.bestDay && <div className="text-xs text-theme-secondary mt-1">{new Date(wl.bestDay.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>}
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Worst Day</div>
+                <div className="text-lg font-bold text-loss">{wl.worstDay ? formatCurrency(wl.worstDay.profit) : '--'}</div>
+                {wl.worstDay && <div className="text-xs text-theme-secondary mt-1">{new Date(wl.worstDay.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>}
+              </div>
+            </div>
           </div>
         </Section>
       )}

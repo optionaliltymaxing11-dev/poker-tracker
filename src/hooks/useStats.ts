@@ -200,11 +200,13 @@ export interface WinLossStats {
   biggestLoss: number;
   avgWinHourly: number;
   avgLossHourly: number;
+  bestDay: { date: string; profit: number } | null;
+  worstDay: { date: string; profit: number } | null;
 }
 
 export function useWinLossStats(sessions: SessionWithDetails[] | undefined): WinLossStats {
   return useMemo(() => {
-    const empty: WinLossStats = { wins: 0, losses: 0, avgWin: 0, avgLoss: 0, biggestWin: 0, biggestLoss: 0, avgWinHourly: 0, avgLossHourly: 0 };
+    const empty: WinLossStats = { wins: 0, losses: 0, avgWin: 0, avgLoss: 0, biggestWin: 0, biggestLoss: 0, avgWinHourly: 0, avgLossHourly: 0, bestDay: null, worstDay: null };
     if (!sessions || sessions.length === 0) return empty;
 
     let wins = 0, losses = 0;
@@ -229,6 +231,21 @@ export function useWinLossStats(sessions: SessionWithDetails[] | undefined): Win
       }
     });
 
+    // Best/worst day (sum all sessions per calendar day)
+    const dayMap = new Map<string, number>();
+    sessions.forEach(session => {
+      const d = new Date(session.start);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      dayMap.set(key, (dayMap.get(key) || 0) + calculateProfit(session));
+    });
+
+    let bestDay: { date: string; profit: number } | null = null;
+    let worstDay: { date: string; profit: number } | null = null;
+    dayMap.forEach((profit, date) => {
+      if (!bestDay || profit > bestDay.profit) bestDay = { date, profit };
+      if (!worstDay || profit < worstDay.profit) worstDay = { date, profit };
+    });
+
     return {
       wins,
       losses,
@@ -238,6 +255,8 @@ export function useWinLossStats(sessions: SessionWithDetails[] | undefined): Win
       biggestLoss,
       avgWinHourly: winHoursTotal > 0 ? totalWinProfit / winHoursTotal : 0,
       avgLossHourly: lossHoursTotal > 0 ? totalLossProfit / lossHoursTotal : 0,
+      bestDay,
+      worstDay,
     };
   }, [sessions]);
 }
