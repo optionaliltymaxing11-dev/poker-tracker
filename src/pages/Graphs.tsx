@@ -645,20 +645,39 @@ function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
       });
     }
 
-    // mode === 'days' - group by calendar day, cumulative daily P&L
-    const dayMap = new Map<string, number>();
+    // mode === 'days' - every calendar day from first to last session
+    // cumulative profit carries forward on non-playing days
+    // stats track consecutive calendar days in downswing/upswing
+    const dayProfitMap = new Map<string, number>();
     sorted.forEach(s => {
-      const day = new Date(s.start).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      dayMap.set(day, (dayMap.get(day) || 0) + calculateProfit(s));
+      const d = new Date(s.start);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      dayProfitMap.set(key, (dayProfitMap.get(key) || 0) + calculateProfit(s));
     });
 
+    if (sorted.length === 0) return [];
+
+    const firstDate = new Date(sorted[0].start);
+    firstDate.setHours(0, 0, 0, 0);
+    const lastDate = new Date(sorted[sorted.length - 1].start);
+    lastDate.setHours(0, 0, 0, 0);
+
+    const result: { session: number; profit: number; peak: number; date: string; dayLabel: string }[] = [];
     let cumProfit = 0;
-    const days = Array.from(dayMap.entries());
-    return days.map(([day, profit], idx) => {
-      cumProfit += profit;
-      const dateStr = new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      return { session: idx + 1, profit: Math.round(cumProfit), peak: 0, date: dateStr, dayLabel: dateStr };
-    });
+    let dayIdx = 0;
+    const cursor = new Date(firstDate);
+
+    while (cursor <= lastDate) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+      const dayProfit = dayProfitMap.get(key) || 0;
+      cumProfit += dayProfit;
+      const dateStr = cursor.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      result.push({ session: dayIdx + 1, profit: Math.round(cumProfit), peak: 0, date: dateStr, dayLabel: dateStr });
+      dayIdx++;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return result;
   }, [mode, stats.cumulativeData, sorted]);
 
   // Recalculate peak line for the mode data
@@ -672,6 +691,41 @@ function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
 
   // Mode-specific stats
   const modeStats = useMemo(() => {
+    if (mode === 'days') {
+      // Track duration in calendar days for downswings/upswings
+      let peak = 0;
+      let peakIdx = 0;
+      let longestDownDays = 0;
+      let longestUpDays = 0;
+      let currentDownStart = -1;
+
+      chartData.forEach((d, idx) => {
+        if (d.profit >= peak) {
+          // New peak or equal - upswing continues
+          if (currentDownStart >= 0) {
+            // Was in a downswing, it just ended
+            currentDownStart = -1;
+          }
+          // Track consecutive days at or above previous peak
+          const upDays = idx - peakIdx;
+          if (d.profit > peak && upDays > longestUpDays) longestUpDays = upDays;
+          peak = d.profit;
+          peakIdx = idx;
+        } else {
+          // Below peak - in a downswing
+          if (currentDownStart < 0) currentDownStart = peakIdx;
+          const downDays = idx - currentDownStart;
+          if (downDays > longestDownDays) longestDownDays = downDays;
+        }
+      });
+
+      const last = chartData[chartData.length - 1];
+      const currentDownDays = (last && last.profit < peak) ? chartData.length - 1 - peakIdx : 0;
+
+      return { biggestDown: longestDownDays, biggestUp: longestUpDays, currentDrawdown: currentDownDays };
+    }
+
+    // Dollars or sessions mode - track by value
     let peak = 0;
     let trough = 0;
     let biggestDown = 0;
@@ -693,9 +747,13 @@ function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
     const currentDrawdown = last ? peak - last.profit : 0;
 
     return { biggestDown, biggestUp, currentDrawdown };
-  }, [chartData]);
+  }, [chartData, mode]);
 
-  const formatVal = (v: number) => mode === 'dollars' ? `$${v.toLocaleString()}` : v.toLocaleString();
+  const formatVal = (v: number) => {
+    if (mode === 'dollars') return `$${v.toLocaleString()}`;
+    if (mode === 'days') return `${v} day${v !== 1 ? 's' : ''}`;
+    return v.toLocaleString();
+  };
 
   return (
     <div>
@@ -744,7 +802,8 @@ function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
           <XAxis
             dataKey={mode === 'days' ? 'dayLabel' : 'session'}
-            tick={{ fill: textColor }}
+            tick={{ fill: textColor, fontSize: mode === 'days' ? 10 : 12 }}
+            interval={mode === 'days' ? 'preserveStartEnd' : undefined}
             label={{
               value: mode === 'days' ? 'Date' : 'Session #',
               position: 'insideBottom',
@@ -765,6 +824,10 @@ function DownswingTracker({ sessions }: { sessions: SessionWithDetails[] }) {
             contentStyle={{ backgroundColor: cardBg, borderColor: gridColor, color: textColor }}
             formatter={(value, name) => {
               const v = Number(value);
+              if (mode === 'days') {
+                if (name === 'Peak') return [`$${v.toLocaleString()}`, 'Peak'];
+                return [`$${v.toLocaleString()}`, 'Cumulative Profit'];
+              }
               if (name === 'Peak') return [formatVal(v), 'Peak'];
               const label = mode === 'sessions' ? 'Net Wins' : 'Cumulative Profit';
               return [formatVal(v), label];
