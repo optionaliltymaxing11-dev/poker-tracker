@@ -92,7 +92,7 @@ export async function loadDemoData(): Promise<void> {
     // Blinds
     const blindConfigs = [
       { sb: 2, bb: 5, straddle: 0 },    // 2/5 NL
-      { sb: 5, bb: 10, straddle: 10 },   // 10/10 NL (5/10 with straddle)
+      { sb: 10, bb: 10, straddle: 0 },    // 10/10 NL
       { sb: 10, bb: 25, straddle: 0 },   // 10/25 NL
       { sb: 5, bb: 5, straddle: 0 },     // 5/5 PLO
       { sb: 10, bb: 25, straddle: 0 },   // 10/25 PLO
@@ -112,55 +112,55 @@ export async function loadDemoData(): Promise<void> {
     // Target: 15-20 bb/hr winrate
     // PLO has much higher variance than NLH
     // Winrates tuned so ~60% of sessions are winners
-    // Lower winrate + higher variance = more losing sessions
+    // Target: $1M+ over ~5,800 hours (~$175/hr weighted avg)
     const stakes: StakeConfig[] = [
       {
         blindId: blindIds[0], gameId: nlId, sb: 2, bb: 5, straddle: 0,
         gameName: '2/5 NL',
         typicalBuyIn: 500, buyInVariance: 200,
-        winRatePerHour: 10 * 5,       // 10 bb/hr * $5 = $50/hr
-        stdDevPerHour: 300,
-        weight: 0.30,
+        winRatePerHour: 15 * 5,       // 15 bb/hr * $5 = $75/hr
+        stdDevPerHour: 280,
+        weight: 0.25,
       },
       {
-        blindId: blindIds[1], gameId: nlId, sb: 5, bb: 10, straddle: 10,
+        blindId: blindIds[1], gameId: nlId, sb: 10, bb: 10, straddle: 0,
         gameName: '10/10 NL',
         typicalBuyIn: 1500, buyInVariance: 500,
-        winRatePerHour: 9 * 10,       // 9 bb/hr * $10 = $90/hr
-        stdDevPerHour: 500,
+        winRatePerHour: 12 * 10,      // 12 bb/hr * $10 = $120/hr
+        stdDevPerHour: 450,
         weight: 0.15,
       },
       {
         blindId: blindIds[2], gameId: nlId, sb: 10, bb: 25, straddle: 0,
         gameName: '10/25 NL',
         typicalBuyIn: 3000, buyInVariance: 1000,
-        winRatePerHour: 8 * 25,       // 8 bb/hr * $25 = $200/hr
-        stdDevPerHour: 900,
+        winRatePerHour: 10 * 25,      // 10 bb/hr * $25 = $250/hr
+        stdDevPerHour: 800,
         weight: 0.10,
       },
       {
         blindId: blindIds[3], gameId: ploId, sb: 5, bb: 5, straddle: 0,
         gameName: '5/5 PLO',
         typicalBuyIn: 1000, buyInVariance: 500,
-        winRatePerHour: 10 * 5,       // 10 bb/hr * $5 = $50/hr
-        stdDevPerHour: 500,
-        weight: 0.25,
+        winRatePerHour: 15 * 5,       // 15 bb/hr * $5 = $75/hr
+        stdDevPerHour: 450,
+        weight: 0.20,
       },
       {
         blindId: blindIds[4], gameId: ploId, sb: 10, bb: 25, straddle: 0,
         gameName: '10/25 PLO',
         typicalBuyIn: 2500, buyInVariance: 1000,
-        winRatePerHour: 8 * 25,       // 8 bb/hr * $25 = $200/hr
-        stdDevPerHour: 1200,
-        weight: 0.12,
+        winRatePerHour: 12 * 25,      // 12 bb/hr * $25 = $300/hr
+        stdDevPerHour: 1100,
+        weight: 0.15,
       },
       {
         blindId: blindIds[5], gameId: ploId, sb: 25, bb: 50, straddle: 0,
         gameName: '25/50 PLO',
         typicalBuyIn: 5000, buyInVariance: 2000,
-        winRatePerHour: 7 * 50,       // 7 bb/hr * $50 = $350/hr
-        stdDevPerHour: 2500,
-        weight: 0.08,
+        winRatePerHour: 10 * 50,      // 10 bb/hr * $50 = $500/hr
+        stdDevPerHour: 2200,
+        weight: 0.15,
       },
     ];
 
