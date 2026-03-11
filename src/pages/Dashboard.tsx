@@ -341,7 +341,7 @@ interface BreakdownTreeProps {
 }
 
 function BreakdownTree({ item, level }: BreakdownTreeProps) {
-  const [expanded, setExpanded] = useState(level === 0);
+  const [expanded, setExpanded] = useState(true);
   const hasChildren = item.children && item.children.length > 0;
   const indent = level * 16;
   const rateColor = item.hourlyRate >= 0 ? 'text-profit' : 'text-loss';
