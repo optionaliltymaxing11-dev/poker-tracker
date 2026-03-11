@@ -988,23 +988,23 @@ export default function Graphs() {
 
       {sessions && sessions.length > 0 && (
         <>
-          <CollapsibleSection title="Session Heatmap">
+          <CollapsibleSection title="Session Heatmap" defaultOpen>
             <SessionHeatmap sessions={sessions} />
           </CollapsibleSection>
 
-          <CollapsibleSection title="Rolling Hourly Rate by Stake">
+          <CollapsibleSection title="Rolling Hourly Rate by Stake" defaultOpen>
             <StakeProgression sessions={sessions} />
           </CollapsibleSection>
 
-          <CollapsibleSection title="Session Length vs Hourly Rate">
+          <CollapsibleSection title="Session Length vs Hourly Rate" defaultOpen>
             <SessionLengthVsRate sessions={sessions} />
           </CollapsibleSection>
 
-          <CollapsibleSection title="Downswing / Upswing Tracker">
+          <CollapsibleSection title="Downswing / Upswing Tracker" defaultOpen>
             <DownswingTracker sessions={sessions} />
           </CollapsibleSection>
 
-          <CollapsibleSection title="Location Comparison">
+          <CollapsibleSection title="Location Comparison" defaultOpen>
             <LocationComparison sessions={sessions} />
           </CollapsibleSection>
         </>

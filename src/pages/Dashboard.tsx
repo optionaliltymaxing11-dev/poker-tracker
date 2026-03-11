@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import Section from '../components/Section';
+import CollapsibleSection from '../components/CollapsibleSection';
 import StatCard from '../components/StatCard';
 import EndSession from '../components/EndSession';
 import { useActiveSessions, useCompletedSessions } from '../hooks/useSessions';
@@ -211,7 +212,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <Section title="Overview">
+      <CollapsibleSection title="Overview" defaultOpen>
         <div className="grid grid-cols-3 gap-4">
           <StatCard
             label="Total Profit"
@@ -228,10 +229,10 @@ export default function Dashboard() {
             valueColor={hourlyColor}
           />
         </div>
-      </Section>
+      </CollapsibleSection>
 
       {completedSessions && completedSessions.length > 0 && (
-        <Section title="Win / Loss">
+        <CollapsibleSection title="Win / Loss" defaultOpen>
           <div className="space-y-3">
             {/* Win/Loss counts */}
             <div className="flex gap-3">
@@ -313,17 +314,17 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </Section>
+        </CollapsibleSection>
       )}
 
       {breakdown.length > 0 && (
-        <Section title="Breakdown">
+        <CollapsibleSection title="Breakdown" defaultOpen>
           <div className="space-y-2">
             {breakdown.map((format, i) => (
               <BreakdownTree key={i} item={format} level={0} />
             ))}
           </div>
-        </Section>
+        </CollapsibleSection>
       )}
     </Layout>
   );
