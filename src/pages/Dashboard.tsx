@@ -287,6 +287,18 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Avg Session Length */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Avg Win Length</div>
+                <div className="text-lg font-bold text-profit">{wl.avgWinLength.toFixed(1)}h</div>
+              </div>
+              <div className="flex-1 bg-hover rounded-lg p-3 text-center">
+                <div className="text-xs text-theme-secondary mb-1">Avg Loss Length</div>
+                <div className="text-lg font-bold text-loss">{wl.avgLossLength.toFixed(1)}h</div>
+              </div>
+            </div>
+
             {/* Best/Worst Day */}
             <div className="flex gap-3">
               <div className="flex-1 bg-hover rounded-lg p-3 text-center">
