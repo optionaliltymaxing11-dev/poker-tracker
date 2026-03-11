@@ -7,7 +7,7 @@ A mobile-first Progressive Web App for tracking live poker sessions. Built with 
 | URL | What it is |
 |-----|-----------|
 | **[Live App](https://optionaliltymaxing11-dev.github.io/poker-tracker/)** | The real app. Opens with an empty database — import your own data via Settings, or start logging sessions manually. All data stays in your browser's IndexedDB. |
-| **[Demo Mode](https://optionaliltymaxing11-dev.github.io/poker-tracker/?demo=true)** | Same app, loaded with ~7 years of realistic fake session data (~830 sessions, $1M+ profit). Great for exploring the UI, graphs, and filters without entering anything. Append `?demo=true` to any page URL to activate. |
+| **[Demo Mode](https://optionaliltymaxing11-dev.github.io/poker-tracker/?demo=true)** | Same app, loaded with demo session data so you can explore the UI, graphs, and filters without entering anything. |
 
 ## Features
 
